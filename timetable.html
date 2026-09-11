@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Timetable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #EFEAE0;
+    --paper-weekend: #E4DCC7;
+    --ink: #26221C;
+    --ink-soft: #706A5B;
+    --rule: #CEC5AE;
+    --rule-strong: #B6AB8C;
+    --accent: #A6552C;
+    --card-bg: #F8F5EC;
+  }
+  * { box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  .wrap{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 36px 24px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 18px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 40px;
+    line-height: 1;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .subtitle{
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .weekrange{
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    color: var(--ink-soft);
+    text-align: right;
+  }
+
+  /* ---------- Upload bar ---------- */
+  .toolbar{
+    display:flex;
+    align-items:center;
+    gap: 14px;
+    margin: 22px 0 30px;
+    flex-wrap: wrap;
+  }
+  .file-stub{
+    border: 1.5px dashed var(--rule-strong);
+    background: var(--card-bg);
+    padding: 12px 18px;
+    border-radius: 3px;
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .file-stub:hover, .file-stub.dragover{
+    border-color: var(--accent);
+    background: #FCF9F0;
+  }
+  .file-stub svg{ flex-shrink:0; }
+  .file-stub-text{ font-size: 13.5px; color: var(--ink-soft); }
+  .file-stub-text strong{ color: var(--ink); font-weight: 600; }
+  input[type=file]{ display:none; }
+  .filename-tag{
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding: 6px 0;
+  }
+  .filename-tag strong{ color: var(--ink); }
+  .clear-btn{
+    font-family: inherit;
+    font-size: 13px;
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 6px 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .error-msg{
+    font-size: 13.5px;
+    color: #8A3324;
+    background: #F6E4DA;
+    border-left: 3px solid #A6552C;
+    padding: 10px 14px;
+    display: none;
+    margin-bottom: 20px;
+  }
+
+  /* ---------- Empty state ---------- */
+  .empty{
+    border: 1px solid var(--rule);
+    background: var(--card-bg);
+    padding: 70px 30px;
+    text-align: center;
+    margin-top: 10px;
+  }
+  .empty-mark{
+    font-family:'Fraunces', serif;
+    font-size: 15px;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+  }
+  .empty h2{
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 24px;
+    margin: 14px 0 8px;
+  }
+  .empty p{
+    color: var(--ink-soft);
+    font-size: 14px;
+    max-width: 360px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  /* ---------- Grid ---------- */
+  .grid-outer{
+    display:none;
+    border-top: 2px solid var(--ink);
+  }
+  .grid-header{
+    display:grid;
+    grid-template-columns: 56px repeat(5, 1fr);
+  }
+  .grid-header .corner{ border-bottom: 1px solid var(--rule); }
+  .day-head{
+    padding: 10px 6px 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+  .day-head.weekend{ background: var(--paper-weekend); }
+  .day-head.today{ background: #F3E4D8; }
+  .day-name{
+    font-family:'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .day-date{
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+
+  .allday-row{
+    display:grid;
+    grid-template-columns: 56px repeat(5, 1fr);
+    border-bottom: 1px solid var(--rule);
+  }
+  .allday-row .label{
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    text-align: right;
+    padding: 6px 8px 6px 0;
+  }
+  .allday-cell{
+    border-left: 1px solid var(--rule);
+    padding: 4px 5px;
+    min-height: 22px;
+  }
+  .allday-chip{
+    font-size: 11px;
+    background: var(--card-bg);
+    border-left: 3px solid var(--accent);
+    padding: 2px 6px;
+    margin-bottom: 3px;
+    display:inline-block;
+  }
+
+  .grid-body{
+    position: relative;
+    display:grid;
+    grid-template-columns: 56px repeat(5, 1fr);
+  }
+  .time-col{
+    position:relative;
+  }
+  .hour-label{
+    position:absolute;
+    right: 8px;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .day-col{
+    position: relative;
+    border-left: 1px solid var(--rule);
+  }
+  .day-col.weekend{ background: rgba(228,220,199,0.45); }
+  .hour-line{
+    position:absolute;
+    left:0; right:0;
+    border-top: 1px solid var(--rule);
+  }
+  .hour-line.half{
+    border-top: 1px dashed #DAD2BC;
+  }
+  .now-line{
+    position:absolute;
+    left:0; right:0;
+    height: 0;
+    border-top: 2px solid var(--accent);
+    z-index: 5;
+  }
+  .now-line::before{
+    content:'';
+    position:absolute;
+    left: -4px; top: -4px;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .event{
+    position:absolute;
+    left: 3px; right: 3px;
+    background: var(--card-bg);
+    border-left: 3px solid var(--ev-color, var(--accent));
+    padding: 5px 7px 4px;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.3;
+    box-shadow: 0 0 0 1px rgba(38,34,28,0.06);
+  }
+  .event .ev-title{
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .event .ev-time{
+    color: var(--ink-soft);
+    font-size: 10.5px;
+    margin-top: 1px;
+  }
+  .event .ev-loc{
+    color: var(--ink-soft);
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 720px){
+    h1{ font-size: 30px; }
+    .grid-header, .grid-body, .allday-row{ grid-template-columns: 40px repeat(5, minmax(84px,1fr)); }
+    .grid-outer{ overflow-x:auto; }
+    .day-name{ font-size: 13px; }
+    .event{ font-size: 10.5px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Weekly Timetable</h1>
+      <div class="subtitle">Import an .ics file to lay out a typical week</div>
+    </div>
+    <div class="weekrange" id="weekrange"></div>
+  </header>
+
+  <div class="toolbar">
+    <label class="file-stub" id="dropZone">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#706A5B" stroke-width="1.6"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+      <span class="file-stub-text"><strong>Choose .ics file</strong> or drag it here</span>
+      <input type="file" id="fileInput" accept=".ics,text/calendar">
+    </label>
+    <span class="filename-tag" id="filenameTag" style="display:none;"></span>
+    <button class="clear-btn" id="clearBtn" style="display:none;">clear</button>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="empty" id="emptyState">
+    <div class="empty-mark">— blank week —</div>
+    <h2>Nothing on the calendar yet</h2>
+    <p>Choose a .ics file exported from your university system, Google Calendar, or Outlook, and your week will lay itself out here.</p>
+  </div>
+
+  <div class="grid-outer" id="gridOuter">
+    <div class="grid-header" id="gridHeader"></div>
+    <div class="allday-row" id="alldayRow"></div>
+    <div class="grid-body" id="gridBody"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri'];
+  const STORAGE_KEY_ICS = 'timetable_ics_text';
+  const STORAGE_KEY_NAME = 'timetable_filename';
+  const COLORS = ['#2F6F62','#A6552C','#47618C','#6B4C6B','#A9821E','#3F6B4C','#9C4B4B','#5C6B4C'];
+
+  const fileInput = document.getElementById('fileInput');
+  const dropZone = document.getElementById('dropZone');
+  const filenameTag = document.getElementById('filenameTag');
+  const clearBtn = document.getElementById('clearBtn');
+  const errorMsg = document.getElementById('errorMsg');
+  const emptyState = document.getElementById('emptyState');
+  const gridOuter = document.getElementById('gridOuter');
+  const gridHeader = document.getElementById('gridHeader');
+  const alldayRow = document.getElementById('alldayRow');
+  const gridBody = document.getElementById('gridBody');
+  const weekrangeEl = document.getElementById('weekrange');
+
+  fileInput.addEventListener('change', e => {
+    if(e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+  });
+  ['dragover','dragenter'].forEach(evt=>{
+    dropZone.addEventListener(evt, e=>{ e.preventDefault(); dropZone.classList.add('dragover'); });
+  });
+  ['dragleave','drop'].forEach(evt=>{
+    dropZone.addEventListener(evt, e=>{ e.preventDefault(); dropZone.classList.remove('dragover'); });
+  });
+  dropZone.addEventListener('drop', e=>{
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if(f) handleFile(f);
+  });
+  clearBtn.addEventListener('click', ()=>{
+    fileInput.value = '';
+    filenameTag.style.display = 'none';
+    clearBtn.style.display = 'none';
+    errorMsg.style.display = 'none';
+    gridOuter.style.display = 'none';
+    emptyState.style.display = 'block';
+    weekrangeEl.textContent = '';
+    try{
+      localStorage.removeItem(STORAGE_KEY_ICS);
+      localStorage.removeItem(STORAGE_KEY_NAME);
+    }catch(e){ /* storage unavailable, nothing to clear */ }
+  });
+
+  function handleFile(file){
+    errorMsg.style.display = 'none';
+    const reader = new FileReader();
+    reader.onload = () => {
+      loadFromText(reader.result, file.name, true);
+    };
+    reader.onerror = () => showError('Could not read that file.');
+    reader.readAsText(file);
+  }
+
+  function loadFromText(text, name, remember){
+    try{
+      const events = parseICS(text);
+      if(events.length === 0){
+        showError('No events were found in that file. Double check it\'s a valid .ics timetable export.');
+        return;
+      }
+      setFilenameTag(name, remember);
+      renderWeek(events);
+      if(remember){
+        try{
+          localStorage.setItem(STORAGE_KEY_ICS, text);
+          localStorage.setItem(STORAGE_KEY_NAME, name);
+        }catch(e){ /* storage unavailable (e.g. sandboxed preview) — carry on without persistence */ }
+      }
+    }catch(err){
+      console.error(err);
+      showError('Could not read that file as a calendar. Try re-exporting the .ics and uploading again.');
+    }
+  }
+
+  function setFilenameTag(name, remembered){
+    filenameTag.textContent = '';
+    const strong = document.createElement('strong');
+    strong.textContent = name;
+    filenameTag.appendChild(document.createTextNode(remembered ? 'remembering ' : 'showing '));
+    filenameTag.appendChild(strong);
+    filenameTag.style.display = 'inline';
+    clearBtn.style.display = 'inline';
+  }
+
+  // on load, restore a previously uploaded timetable if the browser remembers one
+  (function restoreSaved(){
+    let savedText = null, savedName = null;
+    try{
+      savedText = localStorage.getItem(STORAGE_KEY_ICS);
+      savedName = localStorage.getItem(STORAGE_KEY_NAME);
+    }catch(e){ return; }
+    if(savedText && savedName){
+      loadFromText(savedText, savedName, true);
+    }
+  })();
+
+  function showError(msg){
+    errorMsg.textContent = msg;
+    errorMsg.style.display = 'block';
+  }
+
+  // ---------- ICS parsing ----------
+  function parseICS(text){
+    const rawLines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+    const lines = [];
+    for(const line of rawLines){
+      if((line.startsWith(' ') || line.startsWith('\t')) && lines.length){
+        lines[lines.length-1] += line.slice(1);
+      } else if(line.length){
+        lines.push(line);
+      }
+    }
+
+    const events = [];
+    let cur = null;
+    for(const line of lines){
+      if(line === 'BEGIN:VEVENT'){ cur = {}; continue; }
+      if(line === 'END:VEVENT'){ if(cur) events.push(cur); cur = null; continue; }
+      if(!cur) continue;
+      const idx = line.indexOf(':');
+      if(idx === -1) continue;
+      const left = line.slice(0, idx);
+      const value = line.slice(idx+1);
+      const key = left.split(';')[0].toUpperCase();
+      if(key === 'SUMMARY') cur.summary = unescapeText(value);
+      else if(key === 'LOCATION') cur.location = unescapeText(value);
+      else if(key === 'DTSTART') cur.dtstart = parseDate(left, value);
+      else if(key === 'DTEND') cur.dtend = parseDate(left, value);
+      else if(key === 'RRULE') cur.rrule = value;
+    }
+
+    // build display list: one block per unique (weekday, start, end, summary)
+    const seen = new Set();
+    const out = [];
+    for(const ev of events){
+      if(!ev.dtstart || !ev.summary) continue;
+      const start = ev.dtstart;
+      let end = ev.dtend;
+      if(!end){
+        end = start.allDay ? start : { ...start, hour: start.hour+1 };
+      }
+      const weekday = jsWeekdayToMon(new Date(start.year, start.month-1, start.day).getDay());
+      const startMin = start.allDay ? null : start.hour*60 + start.min;
+      let endMin = end.allDay ? null : end.hour*60 + end.min;
+      if(!start.allDay && endMin !== null && endMin <= startMin) endMin = startMin + 30;
+
+      const key = [weekday, start.allDay?'AD':startMin, start.allDay?'AD':endMin, ev.summary, ev.location||''].join('|');
+      if(seen.has(key)) continue;
+      seen.add(key);
+
+      out.push({
+        summary: ev.summary,
+        location: ev.location || '',
+        weekday, // 0=Mon .. 6=Sun
+        allDay: !!start.allDay,
+        startMin, endMin,
+        date: start
+      });
+    }
+    return out;
+  }
+
+  function jsWeekdayToMon(d){ return (d + 6) % 7; }
+
+  function unescapeText(v){
+    return v.replace(/\\n/g,' ').replace(/\\,/g,',').replace(/\\;/g,';').replace(/\\\\/g,'\\');
+  }
+
+  function parseDate(left, value){
+    const isDateOnly = /VALUE=DATE\b/i.test(left) || (value.length === 8 && !value.includes('T'));
+    if(isDateOnly){
+      const y = +value.slice(0,4), m = +value.slice(4,6), d = +value.slice(6,8);
+      return { year:y, month:m, day:d, hour:0, min:0, allDay:true };
+    }
+    const m = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/);
+    if(!m) return null;
+    return {
+      year:+m[1], month:+m[2], day:+m[3],
+      hour:+m[4], min:+m[5], allDay:false
+    };
+  }
+
+  // ---------- Rendering ----------
+  function colorFor(name){
+    let h = 0;
+    for(let i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) >>> 0;
+    return COLORS[h % COLORS.length];
+  }
+
+  function pad2(n){ return n<10 ? '0'+n : ''+n; }
+  function fmtTime(min){
+    const h = Math.floor(min/60), m = min%60;
+    return pad2(h)+':'+pad2(m);
+  }
+
+  function renderWeek(events){
+    emptyState.style.display = 'none';
+    gridOuter.style.display = 'block';
+
+    // Monday of current week, for date labels
+    const today = new Date();
+    const todayMon = jsWeekdayToMon(today.getDay());
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - todayMon);
+    const weekDates = [];
+    for(let i=0;i<5;i++){
+      const d = new Date(monday);
+      d.setDate(monday.getDate()+i);
+      weekDates.push(d);
+    }
+    const opts = { month:'short', day:'numeric' };
+    weekrangeEl.textContent = weekDates[0].toLocaleDateString(undefined,opts) + ' – ' + weekDates[4].toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+
+    // determine hour range
+    const timed = events.filter(e=>!e.allDay && e.weekday < 5);
+    let minStart = 8*60, maxEnd = 18*60;
+    if(timed.length){
+      minStart = Math.min(...timed.map(e=>e.startMin));
+      maxEnd = Math.max(...timed.map(e=>e.endMin));
+    }
+    let startHour = Math.max(0, Math.floor(minStart/60) - 1);
+    let endHour = Math.min(24, Math.ceil(maxEnd/60) + 1);
+    if(endHour - startHour < 6) endHour = Math.min(24, startHour+6);
+    const pxPerHour = 56;
+    const totalMin = (endHour-startHour)*60;
+
+    // header row
+    gridHeader.innerHTML = '<div class="corner"></div>';
+    weekDates.forEach((d,i)=>{
+      const isToday = d.toDateString() === today.toDateString();
+      const head = document.createElement('div');
+      head.className = 'day-head' + (isToday?' today':'');
+      head.innerHTML = '<div class="day-name">'+DAY_NAMES[i]+'</div><div class="day-date">'+d.toLocaleDateString(undefined,opts)+'</div>';
+      gridHeader.appendChild(head);
+    });
+
+    // all-day row
+    alldayRow.innerHTML = '<div class="label">all day</div>';
+    for(let i=0;i<5;i++){
+      const cell = document.createElement('div');
+      cell.className = 'allday-cell';
+      events.filter(e=>e.allDay && e.weekday===i).forEach(e=>{
+        const chip = document.createElement('div');
+        chip.className = 'allday-chip';
+        chip.style.borderLeftColor = colorFor(e.summary);
+        chip.textContent = e.summary;
+        cell.appendChild(chip);
+      });
+      alldayRow.appendChild(cell);
+    }
+    const hasAllDay = events.some(e=>e.allDay);
+    alldayRow.style.display = hasAllDay ? 'grid' : 'none';
+
+    // body: time column + day columns
+    gridBody.innerHTML = '';
+    gridBody.style.height = (totalMin/60*pxPerHour)+'px';
+
+    const timeCol = document.createElement('div');
+    timeCol.className = 'time-col';
+    for(let h=startHour; h<=endHour; h++){
+      const lbl = document.createElement('div');
+      lbl.className = 'hour-label';
+      lbl.style.top = ((h-startHour)*pxPerHour)+'px';
+      lbl.textContent = pad2(h)+':00';
+      timeCol.appendChild(lbl);
+    }
+    gridBody.appendChild(timeCol);
+
+    for(let i=0;i<5;i++){
+      const col = document.createElement('div');
+      col.className = 'day-col';
+
+      for(let h=startHour; h<=endHour; h++){
+        const line = document.createElement('div');
+        line.className = 'hour-line';
+        line.style.top = ((h-startHour)*pxPerHour)+'px';
+        col.appendChild(line);
+        if(h<endHour){
+          const half = document.createElement('div');
+          half.className = 'hour-line half';
+          half.style.top = ((h-startHour)*pxPerHour + pxPerHour/2)+'px';
+          col.appendChild(half);
+        }
+      }
+
+      // today's current-time marker
+      const d = weekDates[i];
+      if(d.toDateString() === today.toDateString()){
+        const nowMin = today.getHours()*60 + today.getMinutes();
+        if(nowMin >= startHour*60 && nowMin <= endHour*60){
+          const now = document.createElement('div');
+          now.className = 'now-line';
+          now.style.top = ((nowMin - startHour*60)/60*pxPerHour)+'px';
+          col.appendChild(now);
+        }
+      }
+
+      // events for this day, packed to avoid overlap
+      const dayEvents = events.filter(e=>!e.allDay && e.weekday===i).sort((a,b)=>a.startMin-b.startMin);
+      const packed = packEvents(dayEvents);
+      packed.forEach(pe=>{
+        const top = (pe.startMin - startHour*60)/60*pxPerHour;
+        const height = Math.max(20, (pe.endMin - pe.startMin)/60*pxPerHour - 2);
+        const el = document.createElement('div');
+        el.className = 'event';
+        el.style.top = top+'px';
+        el.style.height = height+'px';
+        const widthPct = 100/pe.cols;
+        el.style.left = 'calc('+(pe.col*widthPct)+'% + 3px)';
+        el.style.right = 'auto';
+        el.style.width = 'calc('+widthPct+'% - 6px)';
+        el.style.setProperty('--ev-color', colorFor(pe.summary));
+        el.innerHTML = '<div class="ev-title">'+escapeHTML(pe.summary)+'</div>'+
+                        '<div class="ev-time">'+fmtTime(pe.startMin)+'–'+fmtTime(pe.endMin)+'</div>'+
+                        (pe.location ? '<div class="ev-loc">'+escapeHTML(pe.location)+'</div>' : '');
+        col.appendChild(el);
+      });
+
+      gridBody.appendChild(col);
+    }
+  }
+
+  function escapeHTML(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // simple greedy column packing for overlapping events in one day
+  function packEvents(events){
+    const result = [];
+    let cluster = [];
+    let clusterEnd = -1;
+
+    function flush(){
+      if(!cluster.length) return;
+      const cols = [];
+      cluster.forEach(ev=>{
+        let placed = false;
+        for(let c=0;c<cols.length;c++){
+          if(cols[c] <= ev.startMin){ cols[c] = ev.endMin; ev.col = c; placed = true; break; }
+        }
+        if(!placed){ ev.col = cols.length; cols.push(ev.endMin); }
+      });
+      const maxCols = cols.length;
+      cluster.forEach(ev=>{ ev.cols = maxCols; result.push(ev); });
+      cluster = [];
+    }
+
+    events.forEach(ev=>{
+      if(cluster.length && ev.startMin >= clusterEnd){
+        flush();
+        clusterEnd = ev.endMin;
+      } else {
+        clusterEnd = Math.max(clusterEnd, ev.endMin);
+      }
+      cluster.push(ev);
+    });
+    flush();
+    return result;
+  }
+})();
+</script>
+</body>
+</html>
